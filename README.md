@@ -84,3 +84,4 @@ flowchart LR
     N --> O[CRDT-09<br/>right 경계와 ID로 순서 계산]
     O --> D[CRDT-10<br/>문서 복제본 렌더링]
 ```
+### [CRDT_단계별_동작](https://github.com/seuchoi0531/same-time-editing-crdt/blob/main/CRDT_%EB%8B%A8%EA%B3%84%EB%B3%84_%EB%8F%99%EC%9E%91.md)
