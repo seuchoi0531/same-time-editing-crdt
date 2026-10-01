@@ -1,10 +1,122 @@
 <!doctype html>
 <html lang="ko">
-<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>CRDT · 동시에 쓰는 문서</title><link rel="stylesheet" href="style.css" /><style>.editor-card .editor-stage textarea{height:100%;resize:none;color:transparent;background:transparent;caret-color:var(--ink);overflow:auto}.editor-card .editor-stage textarea::selection{background:rgba(118,87,222,.28)}.editor-card .editor-stage textarea::placeholder{color:#a7b5ab}@media(max-width:840px){.editor-stage{height:330px}}</style></head>
-<body><main>
-  <header><div><p class="eyebrow">LIVE COLLABORATION LAB</p><h1>Conflict-free Replicated Data Type</h1><p class="subtitle">각 기기가 문서의 복제본을 갖고, 순서와 무관하게 같은 상태로 병합합니다.</p></div><div class="header-controls"><div class="digital-clock"><span>현재 시각</span><strong id="clock">--:--:--</strong></div><div class="color-control"><label for="color">내 글씨 색</label><input id="color" type="color" value="#7657de" /></div><div class="room-box"><label for="room">발표 방</label><div><input id="room" maxlength="48" /><button id="copy">링크 복사</button></div><small>같은 방 이름의 링크를 공유하세요.</small></div></div></header>
-  <section class="stats"><div><span>연결 상태</span><strong id="connection">연결 중</strong></div><div><span>참여자</span><strong id="peers">1명</strong></div><div><span>고유 원소</span><strong id="elements">0</strong></div><div><span>삭제 표식</span><strong id="tombstones">0</strong></div></section>
-  <section class="workspace"><article class="editor-card"><div class="card-head"><span class="dot"></span><span>분산 복제 문서</span><span class="live">● LIVE</span></div><div class="editor-stage"><div id="highlighter" aria-hidden="true"></div><textarea id="editor" disabled spellcheck="false" placeholder="연결되면 이 문서를 함께 편집할 수 있습니다."></textarea></div><div class="editor-foot"><span id="characters">0자</span><span>로컬 병합 · 서버는 릴레이</span></div></article>
-  <aside><article class="concept"><p class="eyebrow">WHAT JUST HAPPENED?</p><h2>원소의 정체성을 병합합니다</h2><p>문자는 위치가 아니라 고유 ID와 이전 원소를 가리킵니다. 동시에 삽입된 원소도 결정론적 순서로 정렬되어, 어떤 도착 순서에서도 같은 문서가 됩니다.</p><div class="formula">element = { id, after, value }<br />merge(A ∪ B) = merge(B ∪ A)</div></article><article class="stream"><div class="stream-title"><h2>병합 흐름</h2><button id="clear-log">지우기</button></div><ol id="log" aria-live="polite"><li class="empty">첫 편집을 기다리고 있습니다.</li></ol></article></aside></section>
-  <footer><span>CRDT DEMO</span><span>연결 순서가 달라도 각 복제본은 같은 문자 ID 집합과 같은 문서 순서를 만듭니다.</span></footer>
-</main><script src="app.js"></script></body></html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CRDT · 동시에 쓰는 문서</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .editor-card .editor-stage textarea {
+        height: 100%;
+        resize: none;
+        color: transparent;
+        background: transparent;
+        caret-color: var(--ink);
+        overflow: auto;
+      }
+      .editor-card .editor-stage textarea::selection {
+        background: rgba(118, 87, 222, 0.28);
+      }
+      .editor-card .editor-stage textarea::placeholder {
+        color: #a7b5ab;
+      }
+      @media (max-width: 840px) {
+        .editor-stage {
+          height: 330px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <p class="eyebrow">LIVE COLLABORATION LAB</p>
+          <h1>Conflict-free Replicated Data Type</h1>
+          <p class="subtitle">
+            각 기기가 문서의 복제본을 갖고, 순서와 무관하게 같은 상태로
+            병합합니다.
+          </p>
+        </div>
+        <div class="header-controls">
+          <div class="digital-clock">
+            <span>현재 시각</span><strong id="clock">--:--:--</strong>
+          </div>
+          <div class="color-control">
+            <label for="color">내 글씨 색</label
+            ><input id="color" type="color" value="#7657de" />
+          </div>
+          <div class="room-box">
+            <label for="room">발표 방</label>
+            <div>
+              <input id="room" maxlength="48" /><button id="copy">
+                링크 복사
+              </button>
+            </div>
+            <small>같은 방 이름의 링크를 공유하세요.</small>
+          </div>
+        </div>
+      </header>
+      <section class="stats">
+        <div>
+          <span>연결 상태</span><strong id="connection">연결 중</strong>
+        </div>
+        <div><span>참여자</span><strong id="peers">1명</strong></div>
+        <div><span>고유 원소</span><strong id="elements">0</strong></div>
+        <div><span>삭제 표식</span><strong id="tombstones">0</strong></div>
+      </section>
+      <section class="workspace">
+        <article class="editor-card">
+          <div class="card-head">
+            <span class="dot"></span><span>분산 복제 문서</span
+            ><span class="live">● LIVE</span>
+          </div>
+          <div class="editor-stage">
+            <div id="highlighter" aria-hidden="true"></div>
+            <textarea
+              id="editor"
+              disabled
+              spellcheck="false"
+              placeholder="연결되면 이 문서를 함께 편집할 수 있습니다."
+            ></textarea>
+          </div>
+          <div class="editor-foot">
+            <span id="characters">0자</span
+            ><span>로컬 병합 · 서버는 릴레이</span>
+          </div>
+        </article>
+        <aside>
+          <article class="concept">
+            <p class="eyebrow">WHAT JUST HAPPENED?</p>
+            <h2>원소의 정체성을 병합합니다</h2>
+            <p>
+              문자는 위치가 아니라 앞·뒤 원소 ID를 가리킵니다. 동시에 삽입된
+              원소만 결정론적 순서로 정렬되어, 어떤 도착 순서에서도 같은 문서가
+              됩니다.
+            </p>
+            <div class="formula">
+              element = { id, after, right, value }<br />merge(A ∪ B) = merge(B ∪ A)
+            </div>
+          </article>
+          <article class="stream">
+            <div class="stream-title">
+              <h2>병합 흐름</h2>
+              <button id="clear-log">지우기</button>
+            </div>
+            <ol id="log" aria-live="polite">
+              <li class="empty">첫 편집을 기다리고 있습니다.</li>
+            </ol>
+          </article>
+        </aside>
+      </section>
+      <footer>
+        <span>CRDT DEMO</span
+        ><span
+          >연결 순서가 달라도 각 복제본은 같은 문자 ID 집합과 같은 문서 순서를
+          만듭니다.</span
+        >
+      </footer>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
