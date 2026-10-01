@@ -18,7 +18,7 @@ function updateStats() { const visible = current(); $('#elements').textContent =
 function paint(view) { highlighter.replaceChildren(); let start = 0; while (start < view.text.length) { const color = nodes.get(view.ids[start]).color || '#dbe7ef'; let end = start + 1; while (end < view.text.length && (nodes.get(view.ids[end]).color || '#dbe7ef') === color) end++; const mark = document.createElement('span'); mark.className = 'author-mark'; mark.style.setProperty('--mark', color); mark.textContent = view.text.slice(start, end); highlighter.append(mark); start = end; } if (view.text.endsWith('\n')) highlighter.append(document.createElement('br')); highlighter.scrollTop = editor.scrollTop; highlighter.scrollLeft = editor.scrollLeft; }
 function render(selectionStart = editor.selectionStart, selectionEnd = editor.selectionEnd) { const view = current(); applying = true; editor.value = view.text; paint(view); editor.setSelectionRange(Math.min(selectionStart, view.text.length), Math.min(selectionEnd, view.text.length)); applying = false; updateStats(); }
 function label(operation) { return operation.type === 'insert' ? `삽입 ${operation.atoms.length}개 · after ${operation.atoms[0]?.after === root ? 'ROOT' : '원소'}` : `삭제 ${operation.ids.length}개 원소`; }
-function timeOf(value = new Date()) { return new Intl.DateTimeFormat('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date(value)); }
+function timeOf(value = new Date()) { const date = new Date(value); const clock = new Intl.DateTimeFormat('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(date); return `${clock}.${String(Math.floor(date.getMilliseconds() / 10)).padStart(2, '0')}`; }
 function log(operation, kind, timestamp) { const list = $('#log'); list.querySelector('.empty')?.remove(); const color = operation.color || operation.atoms?.[0]?.color || '#9aaba0'; const item = document.createElement('li'); item.style.gridTemplateColumns = '70px 10px 1fr'; item.innerHTML = `<time>${timeOf(timestamp)}</time><i class="log-swatch" style="--editor-color:${color}"></i><span>${kind} · ${label(operation)}</span>`; list.prepend(item); while (list.children.length > 16) list.lastElementChild.remove(); }
 function anchorAt(index) { const ids = current().ids; return index > 0 ? ids[index - 1] : root; }
 function indexAfter(anchor, fallback) { if (anchor === root) return 0; const index = current().ids.indexOf(anchor); return index === -1 ? fallback : index + 1; }
@@ -38,7 +38,7 @@ function connect() { const protocol = location.protocol === 'https:' ? 'wss:' : 
 editor.addEventListener('scroll', () => { highlighter.scrollTop = editor.scrollTop; highlighter.scrollLeft = editor.scrollLeft; });
 colorInput.addEventListener('input', () => localStorage.setItem('crdt-editor-color', colorInput.value));
 function tickClock() { $('#clock').textContent = timeOf(); }
-tickClock(); setInterval(tickClock, 1000);
+tickClock(); setInterval(tickClock, 10);
 $('#copy').addEventListener('click', () => { const next = roomInput.value.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 48) || 'presentation'; location.href = `${location.pathname}?room=${encodeURIComponent(next)}`; });
 $('#clear-log').addEventListener('click', () => { $('#log').innerHTML = '<li class="empty">첫 편집을 기다리고 있습니다.</li>'; });
 connect();
