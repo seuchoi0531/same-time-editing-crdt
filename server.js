@@ -23,8 +23,9 @@ wss.on('connection', (socket) => {
     if (message.type === 'join') { activeRoom = roomFor(idOf(message.room)); activeRoom.clients.add(socket); socket.send(JSON.stringify({ type: 'snapshot', operations: activeRoom.operations, peers: activeRoom.clients.size })); broadcast(activeRoom, { type: 'presence', peers: activeRoom.clients.size }); return; }
     if (message.type !== 'operation' || !activeRoom || !message.operation?.id || !['insert', 'delete'].includes(message.operation.type)) return;
     if (activeRoom.operationIds.has(message.operation.id)) return;
-    activeRoom.operationIds.add(message.operation.id); activeRoom.operations.push(message.operation);
-    broadcast(activeRoom, { type: 'operation', operation: message.operation, author: message.clientId });
+    const timestamp = new Date().toISOString();
+    message.operation.timestamp = timestamp; activeRoom.operationIds.add(message.operation.id); activeRoom.operations.push(message.operation);
+    broadcast(activeRoom, { type: 'operation', operation: message.operation, author: message.clientId, timestamp });
   });
   socket.on('close', () => { if (!activeRoom) return; activeRoom.clients.delete(socket); broadcast(activeRoom, { type: 'presence', peers: activeRoom.clients.size }); });
 });
